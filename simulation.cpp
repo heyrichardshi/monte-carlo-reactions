@@ -6,10 +6,10 @@
 using namespace std;
 
 Simulation::Simulation(int n) : _species(n), _A(0.5), _M1(20), _M2(1000) {
-    // STEP 1
+    // TODO: STEP 1
     for (int i = 0; i < n; i++) {
         _N.push_back(RandomInt(1000, 2000));
-        _Ni.push_back(_N[i]); // TODO: should reset each cycle?
+        _Ni.push_back(_N[i]);
         _dNdt.push_back(0);
         _dNidt.push_back(0);
     }
@@ -44,14 +44,14 @@ void Simulation::run() {
     for (int i = 0; i < _M2; i++) {
 
         for (int j = 0; j < _species; j++) {
-            _dNidt[j] = calcdNdt(j); //TODO: reset each cycle (or stay init)
+            _dNidt[j] = calcdNdt(j);
             _Ni[j] = _N[j];
         }
 
         printN();
 
         for (int j = 0; j <= changeless; j++) {
-            cycle();
+            cycle(); // TODO: STEPS 2 - 5
         }
 
         // STEP 6
@@ -59,8 +59,8 @@ void Simulation::run() {
         vector<double> change;
         for (int j = 0; j < _species; j++) {
             restricted.push_back(abs(_N[j] - _Ni[j]) < 3);
-            change.push_back(abs(2 * (_dNdt[j] - _dNidt[j]) / (_dNdt[j] + _dNidt[j])));
-//            change.push_back(abs((_dNdt[j] - _dNidt[j]) / _dNidt[j]));
+//            change.push_back(abs(2 * (_dNdt[j] - _dNidt[j]) / (_dNdt[j] + _dNidt[j])));
+            change.push_back(abs((_dNdt[j] - _dNidt[j]) / _dNidt[j]));
             cout << "species " << j << " | restricted: " << restricted[j] << " | change = " << change[j] << endl;
         }
 
@@ -71,6 +71,7 @@ void Simulation::run() {
             }
             if (smallest == -1) {
                 smallest = j;
+                continue;
             }
             if (change[j] < change[smallest]) {
                 smallest = j;
@@ -107,26 +108,16 @@ void Simulation::cycle() {
         vector<double> R;
         double Rmax = 0;
 
-        cout << "R";
         for (int j = 0; j < reactions(); j++) {
             R.push_back(calcR(j));
-            cout << " | " << R[j];
             Rmax = R[j] > Rmax ? R[j] : Rmax;
         }
-        cout << endl;
 
         // STEP 4
         double random = RandomUniform();
         for (int j = 0; j < reactions(); j++) {
-            if ((_A * R[j] / Rmax) >= random) {
-                for (int k = 0; k < _reactions[j].reactants(); k++) {
-                    int reactant = _reactions[j].reactant(k);
-                    _N[reactant] -= _reactions[j].coefficient(reactant);
-                }
-                for (int k = 0; k < _reactions[j].products(); k++) {
-                    int product = _reactions[j].product(k);
-                    _N[product] += _reactions[j].coefficient(product);
-                }
+            if ((_A * R[j] / Rmax) > random) {
+                react(j);
             }
         }
 
@@ -177,4 +168,23 @@ double Simulation::calcdNdt(int species) {
     }
 //    cout << "calc dN_" << species << "/dt = " << dNdt << endl;
     return dNdt;
+}
+
+void Simulation::react(int alpha) {
+    for (int i = 0; i < _reactions[alpha].reactants(); i++) {
+        int reactant = _reactions[alpha].reactant(i);
+        if (_N[reactant] < _reactions[alpha].coefficient(reactant)) {
+//            _reactions[alpha].kill();
+            return;
+        }
+    }
+//    _reactions[alpha].unkill();
+    for (int i = 0; i < _reactions[alpha].reactants(); i++) {
+        int reactant = _reactions[alpha].reactant(i);
+        _N[reactant] -= _reactions[alpha].coefficient(reactant);
+    }
+    for (int i = 0; i < _reactions[alpha].products(); i++) {
+        int product = _reactions[alpha].product(i);
+        _N[product] += _reactions[alpha].coefficient(product);
+    }
 }

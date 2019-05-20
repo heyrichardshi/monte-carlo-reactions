@@ -3,7 +3,7 @@
 using namespace std;
 
 Reaction::Reaction(double k, vector<int> reactants, vector<int> a, vector<int> products, vector<int> b) :
-_k(k), _reactants(reactants), _a(a), _products(products), _b(b) { }
+_k(k), _reactants(reactants), _a(a), _products(products), _b(b), _dead(false) { }
 
 int Reaction::exists(int species) {
     int i = -1;
@@ -52,4 +52,16 @@ int Reaction::reactant(int index) {
 
 int Reaction::product(int index) {
     return _products[index];
+}
+
+bool Reaction::dead() {
+    return !_dead;
+}
+
+void Reaction::kill() {
+    _dead = true;
+}
+
+void Reaction::unkill() {
+    _dead = false;
 }

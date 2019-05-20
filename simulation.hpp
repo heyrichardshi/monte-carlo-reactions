@@ -30,6 +30,7 @@ public:
     double calcR(int alpha);
     double getN(int species);
     double calcdNdt(int species);
+    void react(int alpha);
     void printN();
 };
 
